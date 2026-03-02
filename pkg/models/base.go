@@ -2,9 +2,9 @@ package models
 
 // BaseResponse API基础响应
 type BaseResponse struct {
-	Status   string `json:"status"`
-	Info     string `json:"info"`
-	Infocode string `json:"infocode"`
+	Status   string `json:"status"`    // 状态码，1=成功，0=失败
+	Info     string `json:"info"`      // 返回的状态说明
+	Infocode string `json:"infocode"` // 返回状态说明
 }
 
 // GetStatus 实现StatusChecker接口
@@ -14,29 +14,29 @@ func (b *BaseResponse) GetInfocode() string { return b.Infocode }
 
 // AddressComponent 地址组件
 type AddressComponent struct {
-	Country  string `json:"country"`
-	Province string `json:"province"`
-	City     string `json:"city"`
-	District string `json:"district"`
-	Township string `json:"township"`
-	Adcode   string `json:"adcode"`
-	Towncode string `json:"towncode"`
-	Citycode string `json:"citycode"`
+	Country  string `json:"country"`  // 国家
+	Province string `json:"province"` // 省份
+	City     string `json:"city"`     // 城市
+	District string `json:"district"` // 区县
+	Township string `json:"township"` // 乡镇
+	Adcode   string `json:"adcode"`   // 区域编码
+	Towncode string `json:"towncode"` // 乡镇编码
+	Citycode string `json:"citycode"` // 城市编码
 }
 
 // PoiInfo POI信息
 type PoiInfo struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Type     string  `json:"type"`
-	Tel      string  `json:"tel"`
-	Address  string  `json:"address"`
-	Location string  `json:"location"`
-	Distance float64 `json:"distance"`
+	ID       string          `json:"id"`       // POI ID
+	Name     string          `json:"name"`     // POI名称
+	Type     string          `json:"type"`     // POI类型
+	Tel      string          `json:"tel"`      // 电话
+	Address  string          `json:"address"`  // 地址
+	Location string          `json:"location"` // 坐标（经度,纬度）
+	Distance Float64OrString `json:"distance"` // 距离（米）
 }
 
-// Suggestion 建议信息
+// Suggestion 搜索建议信息
 type Suggestion struct {
-	Keywords []string `json:"keywords"`
-	Cities   []string `json:"cities"`
+	Keywords []string `json:"keywords"` // 关键词建议
+	Cities   []string `json:"cities"`   // 城市建议
 }

@@ -83,6 +83,7 @@ func (h *HTTPClient) request(
 	if err != nil {
 		return fmt.Errorf("构建URL失败: %w", err)
 	}
+	h.logger.Debug("请求URL: %s", fullURL)
 
 	// 准备请求体
 	var reqBody io.Reader
@@ -118,26 +119,42 @@ func (h *HTTPClient) request(
 	defer resp.Body.Close()
 
 	// 读取响应体
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("读取响应体失败: %w", err)
+	}
+
 	buf := h.bufferPool.Get().(*bytes.Buffer)
 	buf.Reset()
 	defer h.bufferPool.Put(buf)
 
-	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		return fmt.Errorf("读取响应体失败: %w", err)
+	if _, err := buf.Write(bodyBytes); err != nil {
+		return fmt.Errorf("写入缓冲区失败: %w", err)
 	}
 
 	// 记录响应
-	h.logger.Debug("响应状态: %d, 响应体: %s", resp.StatusCode, buf.String())
+	bodyStr := buf.String()
+	h.logger.Debug("响应状态: %d, 响应体长度: %d 字节", resp.StatusCode, len(bodyStr))
 
 	// 检查响应状态码
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API请求失败，状态码: %d, 响应: %s", resp.StatusCode, buf.String())
+		return fmt.Errorf("API请求失败，状态码: %d, 响应: %s", resp.StatusCode, bodyStr)
+	}
+
+	// 检查响应体是否为空
+	if len(bodyStr) == 0 {
+		return fmt.Errorf("响应体为空，状态码: %d", resp.StatusCode)
 	}
 
 	// 解析响应
 	if result != nil {
 		if err := json.Unmarshal(buf.Bytes(), result); err != nil {
-			return fmt.Errorf("解析响应失败: %w", err)
+			// 输出响应体前500个字符用于调试
+			preview := bodyStr
+			if len(preview) > 500 {
+				preview = preview[:500] + "..."
+			}
+			return fmt.Errorf("解析响应失败: %w, 响应体预览: %s", err, preview)
 		}
 	}
 

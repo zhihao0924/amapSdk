@@ -68,7 +68,6 @@ type (
 	DrivingRoute    = models.DrivingRoute
 	DrivingPath     = models.DrivingPath
 	DrivingStep     = models.DrivingStep
-	TaxiInfo        = models.TaxiInfo
 	WalkingResponse = models.WalkingResponse
 	WalkingRoute    = models.WalkingRoute
 	WalkingPath     = models.WalkingPath

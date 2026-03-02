@@ -113,14 +113,14 @@ func LoggingResponseInterceptor(logger common.Logger) ResponseInterceptorFunc {
 
 		var body string
 		if resp.Body != nil {
-			buf := make([]byte, 0, maxBodySize)
-			n, err := resp.Body.Read(buf[:cap(buf)])
-			if err != nil && err != io.EOF {
+			// 使用 io.ReadAll 确保读取完整的响应体
+			bodyBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
 				return err
 			}
-			buf = buf[:n]
-			body = string(buf)
-			resp.Body = io.NopCloser(bytes.NewReader(buf))
+			body = string(bodyBytes)
+			// 重建响应体供后续使用
+			resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		}
 
 		logger.Info("响应: %d, Header: %v, Body: %s", resp.StatusCode, resp.Header, body)

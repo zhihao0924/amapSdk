@@ -52,9 +52,8 @@ func main() {
 		fmt.Printf("  策略: %s\n", path.Strategy)
 
 		// 输出出租车费用信息
-		if resp.Route.Taxi.Cost > 0 {
-			fmt.Printf("  出租车费用: %d 元\n", resp.Route.Taxi.Cost)
-			fmt.Printf("  出租车距离: %d 米\n", resp.Route.Taxi.Distance)
+		if resp.Route.TaxiCost != "" {
+			fmt.Printf("  出租车费用: %s 元\n", resp.Route.TaxiCost)
 		}
 
 		// 输出前3个步骤
@@ -64,7 +63,7 @@ func main() {
 				break
 			}
 			fmt.Printf("  %d. %s\n", i+1, step.Instruction)
-			fmt.Printf("     距离: %d 米, 耗时: %d 秒\n", step.Distance, step.Duration)
+			fmt.Printf("     距离: %s 米, 耗时: %s 秒\n", step.Distance, step.Duration)
 		}
 	}
 }
