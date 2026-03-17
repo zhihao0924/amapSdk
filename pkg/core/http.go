@@ -52,7 +52,7 @@ func NewHTTPClient(
 		logger:      logger,
 		retryConfig: retryConfig,
 		bufferPool: &sync.Pool{
-			New: func() interface{} {
+			New: func() any {
 				return new(bytes.Buffer)
 			},
 		},
@@ -60,12 +60,12 @@ func NewHTTPClient(
 }
 
 // Get 执行GET请求
-func (h *HTTPClient) Get(ctx context.Context, path string, params map[string]string, result interface{}) error {
+func (h *HTTPClient) Get(ctx context.Context, path string, params map[string]string, result any) error {
 	return h.request(ctx, "GET", path, params, nil, result)
 }
 
 // Post 执行POST请求
-func (h *HTTPClient) Post(ctx context.Context, path string, params map[string]string, body interface{}, result interface{}) error {
+func (h *HTTPClient) Post(ctx context.Context, path string, params map[string]string, body any, result any) error {
 	return h.request(ctx, "POST", path, params, body, result)
 }
 
@@ -75,8 +75,8 @@ func (h *HTTPClient) request(
 	method string,
 	path string,
 	params map[string]string,
-	body interface{},
-	result interface{},
+	body any,
+	result any,
 ) error {
 	// 构建完整URL
 	fullURL, err := h.buildURL(path, params)
@@ -188,11 +188,17 @@ func (h *HTTPClient) doWithRetry(req *http.Request) (*http.Response, error) {
 	var lastErr error
 	var resp *http.Response
 
-	for attempt := 1; attempt <= h.retryConfig.MaxRetries; attempt++ {
+	for attempt := 0; attempt < h.retryConfig.MaxRetries; attempt++ {
 		// 执行请求
 		resp, lastErr = h.client.Do(req)
 		if lastErr == nil {
-			break // 请求成功，退出重试
+			// 检查响应状态码是否需要重试
+			if resp.StatusCode < 500 || resp.StatusCode == http.StatusTooManyRequests {
+				return resp, nil
+			}
+			// 5xx 错误可能需要重试，关闭响应体后继续
+			resp.Body.Close()
+			resp = nil
 		}
 
 		// 检查是否应该重试
@@ -200,11 +206,11 @@ func (h *HTTPClient) doWithRetry(req *http.Request) (*http.Response, error) {
 			break
 		}
 
-		// 计算退避时间
-		backoffTime := time.Duration(attempt) * h.retryConfig.RetryDelay
-		h.logger.Warn("请求失败，将在 %v 后重试 (尝试 %d/%d): %v", backoffTime, attempt, h.retryConfig.MaxRetries, lastErr)
+		// 计算退避时间（使用指数退避）
+		backoffTime := time.Duration(1<<uint(attempt)) * h.retryConfig.RetryDelay
+		h.logger.Warn("请求失败，将在 %v 后重试 (尝试 %d/%d): %v", backoffTime, attempt+1, h.retryConfig.MaxRetries, lastErr)
 
-		// 等待退避时间
+		// 等待退避时间或上下文取消
 		select {
 		case <-time.After(backoffTime):
 		case <-req.Context().Done():
@@ -234,17 +240,8 @@ func isRetryable(err error) bool {
 		return false
 	}
 
-	// 检查是否为网络错误
-	if isNetworkError(err) {
-		return true
-	}
-
-	// 检查是否为超时错误
-	if isTimeoutError(err) {
-		return true
-	}
-
-	return false
+	// 检查是否为网络错误或超时错误
+	return isNetworkError(err) || isTimeoutError(err)
 }
 
 // isNetworkError 判断是否为网络错误

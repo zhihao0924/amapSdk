@@ -1,6 +1,7 @@
 package core
 
 import (
+	"strings"
 	"time"
 
 	"github.com/zhihao0924/amapSdk/pkg/common"
@@ -76,7 +77,18 @@ func (c *Config) GetInterceptorChain() *InterceptorChain {
 // Validate 验证配置
 func (c *Config) Validate() error {
 	if c.Key == "" {
-		return common.ErrInvalidConfigError
+		return common.WrapError(common.ErrInvalidConfigError, "API Key is required")
+	}
+	if len(c.Key) < 10 {
+		return common.WrapError(common.ErrInvalidConfigError, "API Key length is too short")
+	}
+	if c.BaseURL != "" && !isValidURL(c.BaseURL) {
+		return common.WrapError(common.ErrInvalidConfigError, "invalid BaseURL")
 	}
 	return nil
+}
+
+// isValidURL 验证 URL 格式
+func isValidURL(s string) bool {
+	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }

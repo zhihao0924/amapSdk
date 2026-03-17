@@ -9,11 +9,6 @@ import (
 	"github.com/zhihao0924/amapSdk/pkg/common"
 )
 
-const (
-	// maxBodySize 最大请求体大小（10MB）
-	maxBodySize = 10 * 1024 * 1024
-)
-
 // InterceptorFunc 请求拦截器函数类型
 type InterceptorFunc func(req *http.Request) error
 
@@ -90,8 +85,8 @@ func LoggingRequestInterceptor(logger common.Logger) InterceptorFunc {
 		var body string
 		if req.Body != nil {
 			buf := make([]byte, 0, 1024)
-			n, err := req.Body.Read(buf[:cap(buf)])
-			if err != nil && err != io.EOF {
+			n, err := io.ReadFull(req.Body, buf[:cap(buf)])
+			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
 				return err
 			}
 			buf = buf[:n]

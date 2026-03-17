@@ -73,7 +73,7 @@ func NewError(code, message string) *Error {
 }
 
 // NewErrorf 创建格式化错误
-func NewErrorf(code, format string, args ...interface{}) *Error {
+func NewErrorf(code, format string, args ...any) *Error {
 	return NewError(code, fmt.Sprintf(format, args...))
 }
 
@@ -134,7 +134,8 @@ func IsTimeoutError(err error) bool {
 	}
 
 	// 检查是否为网络超时
-	if netErr, ok := err.(net.Error); ok {
+	var netErr net.Error
+	if errors.As(err, &netErr) {
 		return netErr.Timeout()
 	}
 
