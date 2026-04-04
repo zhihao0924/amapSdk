@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -27,7 +28,7 @@ func main() {
 	}
 
 	// 调用天气查询服务（实时天气）
-	liveResp, err := client.Weather().Query(liveOpts)
+	liveResp, err := client.Weather().Query(context.Background(), liveOpts)
 	if err != nil {
 		log.Fatalf("天气查询失败: %v", err)
 	}
@@ -64,7 +65,7 @@ func main() {
 	}
 
 	// 调用天气查询服务（预报天气）
-	forecastResp, err := client.Weather().Query(forecastOpts)
+	forecastResp, err := client.Weather().Query(context.Background(), forecastOpts)
 	if err != nil {
 		log.Fatalf("天气查询失败: %v", err)
 	}

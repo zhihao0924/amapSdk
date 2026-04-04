@@ -24,6 +24,19 @@ var DefaultRetryConfig = &RetryConfig{
 	Retryable:  DefaultRetryable,
 }
 
+// Clone 拷贝重试配置，避免多个客户端共享同一个可变实例
+func (r *RetryConfig) Clone() *RetryConfig {
+	if r == nil {
+		return nil
+	}
+
+	cloned := *r
+	if cloned.Retryable == nil {
+		cloned.Retryable = DefaultRetryable
+	}
+	return &cloned
+}
+
 // DefaultRetryable 默认的可重试判断函数
 func DefaultRetryable(err error) bool {
 	if err == nil {

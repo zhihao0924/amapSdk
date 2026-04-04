@@ -68,7 +68,7 @@ go build -o basic
       SetAddress("北京市朝阳区").
       SetCity("北京").
       Build()
-  resp, err := client.Geocode().Get(opts)
+  resp, err := client.Geocode().Geo(context.Background(), opts)
   ```
 
 - **regeocode.go**: 将经纬度坐标转换为地址信息
@@ -77,7 +77,7 @@ go build -o basic
       SetLocation(116.397428, 39.90923).
       SetRadius("1000").
       Build()
-  resp, err := client.Geocode().ReGet(opts)
+  resp, err := client.Geocode().ReGeo(context.Background(), opts)
   ```
 
 ### 路径规划
@@ -89,7 +89,7 @@ go build -o basic
       SetDestination(116.397428, 39.90923).
       SetStrategy(int(amap.DrivingStrategyFastest)).
       Build()
-  resp, err := client.Direction().Driving(opts)
+  resp, err := client.Direction().Driving(context.Background(), opts)
   ```
 
 - **walking.go**: 步行路径规划
@@ -98,7 +98,7 @@ go build -o basic
       SetOrigin(116.481181, 39.989792).
       SetDestination(116.397428, 39.90923).
       Build()
-  resp, err := client.Direction().Walking(opts)
+  resp, err := client.Direction().Walking(context.Background(), opts)
   ```
 
 ### POI搜索
@@ -110,7 +110,7 @@ go build -o basic
       City:      "北京",
       CityLimit: true,
   }
-  resp, err := client.Place().TextSearch(opts)
+  resp, err := client.Place().TextSearch(context.Background(), opts)
   ```
 
 - **around_search.go**: 周边搜索POI
@@ -121,7 +121,7 @@ go build -o basic
       Radius:   "1000",
       SortType: "distance",
   }
-  resp, err := client.Place().AroundSearch(opts)
+  resp, err := client.Place().AroundSearch(context.Background(), opts)
   ```
 
 ### 天气查询
@@ -133,11 +133,11 @@ go build -o basic
       City:       "110101",
       Extensions: "base",
   }
-  resp, err := client.Weather().Query(opts)
+  resp, err := client.Weather().Query(context.Background(), opts)
 
   // 天气预报
   opts.Extensions = "all"
-  resp, err = client.Weather().Query(opts)
+  resp, err = client.Weather().Query(context.Background(), opts)
   ```
 
 ### IP定位
@@ -147,7 +147,7 @@ go build -o basic
   opts := &amap.LocationOptions{
       IP: "114.247.50.2",
   }
-  resp, err := client.IP().Location(opts)
+  resp, err := client.IP().Location(context.Background(), opts)
   ```
 
 ### 高级特性

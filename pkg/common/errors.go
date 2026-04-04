@@ -85,6 +85,32 @@ func GetAPIErrorMessage(code string) string {
 	return "未知错误"
 }
 
+// NewAPIError 根据高德返回生成SDK错误
+func NewAPIError(infoCode, info string) *Error {
+	infoCode = strings.TrimSpace(infoCode)
+	info = strings.TrimSpace(info)
+
+	if info == "" {
+		info = GetAPIErrorMessage(infoCode)
+	}
+
+	return NewError(mapAPIErrorCode(infoCode), fmt.Sprintf("amap api error [%s]: %s", infoCode, info))
+}
+
+// ValidateAPIResponse 校验高德接口业务响应状态
+func ValidateAPIResponse(statusChecker StatusChecker) error {
+	if statusChecker == nil {
+		return nil
+	}
+
+	status := strings.TrimSpace(statusChecker.GetStatus())
+	if status == "" || status == "1" {
+		return nil
+	}
+
+	return NewAPIError(statusChecker.GetInfocode(), statusChecker.GetInfo())
+}
+
 // 预定义错误
 var (
 	ErrInvalidConfigError = errors.New("invalid configuration")
@@ -102,8 +128,8 @@ func IsAPIError(err error) bool {
 	if err == nil {
 		return false
 	}
-	_, ok := err.(*Error)
-	return ok
+	var sdkErr *Error
+	return errors.As(err, &sdkErr)
 }
 
 // IsNetworkError 判断是否为网络错误
@@ -155,6 +181,10 @@ func IsRateLimitError(err error) bool {
 	if err == nil {
 		return false
 	}
+	var sdkErr *Error
+	if errors.As(err, &sdkErr) {
+		return sdkErr.Code == ErrRateLimit
+	}
 	return errors.Is(err, ErrRateLimitError)
 }
 
@@ -162,6 +192,10 @@ func IsRateLimitError(err error) bool {
 func IsAuthError(err error) bool {
 	if err == nil {
 		return false
+	}
+	var sdkErr *Error
+	if errors.As(err, &sdkErr) {
+		return sdkErr.Code == ErrAuthFailed
 	}
 	return errors.Is(err, ErrAuthFailedError)
 }
@@ -177,4 +211,19 @@ func WrapError(err error, message string) error {
 // UnwrapError 解包错误，获取原始错误
 func UnwrapError(err error) error {
 	return errors.Unwrap(err)
+}
+
+func mapAPIErrorCode(infoCode string) string {
+	switch strings.TrimSpace(infoCode) {
+	case "10001", "10002", "10005", "10006", "10007", "10008", "10009", "10010", "10011":
+		return ErrAuthFailed
+	case "10003", "10004":
+		return ErrRateLimit
+	case "20000", "20001", "20002":
+		return ErrInvalidParams
+	case "20004":
+		return ErrAuthFailed
+	default:
+		return ErrAPIError
+	}
 }

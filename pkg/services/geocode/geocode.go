@@ -68,7 +68,10 @@ func (o *Options) buildParams() map[string]string {
 }
 
 // Geo 地理编码 - 将地址转换为经纬度
-func (s *Service) Geo(opts *Options) (*models.GeocodeResponse, error) {
+func (s *Service) Geo(ctx context.Context, opts *Options) (*models.GeocodeResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
 	if opts == nil {
 		return nil, common.ErrInvalidParamsError
 	}
@@ -79,7 +82,7 @@ func (s *Service) Geo(opts *Options) (*models.GeocodeResponse, error) {
 	}
 
 	var resp models.GeocodeResponse
-	err := s.http.Get(context.Background(), "/geocode/geo", opts.buildParams(), &resp)
+	err := s.http.Get(ctx, "/geocode/geo", opts.buildParams(), &resp)
 	if err != nil {
 		s.logger.Error("Geocode request failed: address=%s, error=%v", opts.Address, err)
 		return nil, err
@@ -135,7 +138,10 @@ func (o *ReGeoOptions) buildParams() map[string]string {
 }
 
 // ReGeo 逆地理编码 - 将经纬度转换为地址
-func (s *Service) ReGeo(opts *ReGeoOptions) (*models.ReGeocodeResponse, error) {
+func (s *Service) ReGeo(ctx context.Context, opts *ReGeoOptions) (*models.ReGeocodeResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
 	if opts == nil {
 		return nil, common.ErrInvalidParamsError
 	}
@@ -146,7 +152,7 @@ func (s *Service) ReGeo(opts *ReGeoOptions) (*models.ReGeocodeResponse, error) {
 	}
 
 	var resp models.ReGeocodeResponse
-	err := s.http.Get(context.Background(), "/geocode/regeo", opts.buildParams(), &resp)
+	err := s.http.Get(ctx, "/geocode/regeo", opts.buildParams(), &resp)
 	if err != nil {
 		s.logger.Error("ReGeocode request failed: location=%s, error=%v", opts.Location, err)
 		return nil, err
@@ -160,12 +166,12 @@ func (s *Service) ReGeo(opts *ReGeoOptions) (*models.ReGeocodeResponse, error) {
 }
 
 // ReGeoByLocation 使用Location对象进行逆地理编码
-func (s *Service) ReGeoByLocation(loc *common.Location, extensions string) (*models.ReGeocodeResponse, error) {
+func (s *Service) ReGeoByLocation(ctx context.Context, loc *common.Location, extensions string) (*models.ReGeocodeResponse, error) {
 	if loc == nil {
 		return nil, common.ErrInvalidParamsError
 	}
 
-	return s.ReGeo(&ReGeoOptions{
+	return s.ReGeo(ctx, &ReGeoOptions{
 		Location:   loc.String(),
 		Extensions: extensions,
 	})

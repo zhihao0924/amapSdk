@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/zhihao0924/amapSdk/pkg/common"
@@ -21,7 +20,6 @@ type HTTPClient struct {
 	apiKey      string
 	logger      common.Logger
 	retryConfig *RetryConfig
-	bufferPool  *sync.Pool
 }
 
 // httpClient HTTP客户端接口
@@ -45,17 +43,18 @@ func NewHTTPClient(
 	logger common.Logger,
 	retryConfig *RetryConfig,
 ) *HTTPClient {
+	if retryConfig == nil {
+		retryConfig = DefaultRetryConfig.Clone()
+	} else {
+		retryConfig = retryConfig.Clone()
+	}
+
 	return &HTTPClient{
 		client:      client,
 		baseURL:     baseURL,
 		apiKey:      apiKey,
 		logger:      logger,
 		retryConfig: retryConfig,
-		bufferPool: &sync.Pool{
-			New: func() any {
-				return new(bytes.Buffer)
-			},
-		},
 	}
 }
 
@@ -87,18 +86,25 @@ func (h *HTTPClient) request(
 
 	// 准备请求体
 	var reqBody io.Reader
+	var requestBodyBytes []byte
 	if body != nil && (method == "POST" || method == "PUT") {
 		jsonData, err := json.Marshal(body)
 		if err != nil {
 			return fmt.Errorf("序列化请求体失败: %w", err)
 		}
-		reqBody = bytes.NewReader(jsonData)
+		requestBodyBytes = jsonData
+		reqBody = bytes.NewReader(requestBodyBytes)
 	}
 
 	// 创建请求
 	req, err := http.NewRequestWithContext(ctx, method, fullURL, reqBody)
 	if err != nil {
 		return fmt.Errorf("创建请求失败: %w", err)
+	}
+	if len(requestBodyBytes) > 0 {
+		req.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader(requestBodyBytes)), nil
+		}
 	}
 
 	// 设置请求头
@@ -124,16 +130,8 @@ func (h *HTTPClient) request(
 		return fmt.Errorf("读取响应体失败: %w", err)
 	}
 
-	buf := h.bufferPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer h.bufferPool.Put(buf)
-
-	if _, err := buf.Write(bodyBytes); err != nil {
-		return fmt.Errorf("写入缓冲区失败: %w", err)
-	}
-
 	// 记录响应
-	bodyStr := buf.String()
+	bodyStr := string(bodyBytes)
 	h.logger.Debug("响应状态: %d, 响应体长度: %d 字节", resp.StatusCode, len(bodyStr))
 
 	// 检查响应状态码
@@ -148,13 +146,19 @@ func (h *HTTPClient) request(
 
 	// 解析响应
 	if result != nil {
-		if err := json.Unmarshal(buf.Bytes(), result); err != nil {
+		if err := json.Unmarshal(bodyBytes, result); err != nil {
 			// 输出响应体前500个字符用于调试
 			preview := bodyStr
 			if len(preview) > 500 {
 				preview = preview[:500] + "..."
 			}
 			return fmt.Errorf("解析响应失败: %w, 响应体预览: %s", err, preview)
+		}
+
+		if statusChecker, ok := result.(common.StatusChecker); ok {
+			if err := common.ValidateAPIResponse(statusChecker); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -187,42 +191,47 @@ func (h *HTTPClient) buildURL(path string, params map[string]string) (string, er
 func (h *HTTPClient) doWithRetry(req *http.Request) (*http.Response, error) {
 	var lastErr error
 	var resp *http.Response
+	totalAttempts := 1
+	if h.retryConfig != nil {
+		totalAttempts += h.retryConfig.MaxRetries
+	}
 
-	for attempt := 0; attempt < h.retryConfig.MaxRetries; attempt++ {
-		// 执行请求
-		resp, lastErr = h.client.Do(req)
-		if lastErr == nil {
-			// 检查响应状态码是否需要重试
-			if resp.StatusCode < 500 || resp.StatusCode == http.StatusTooManyRequests {
-				return resp, nil
-			}
-			// 5xx 错误可能需要重试，关闭响应体后继续
-			resp.Body.Close()
-			resp = nil
+	for attempt := 0; attempt < totalAttempts; attempt++ {
+		attemptReq, err := cloneRequestForAttempt(req)
+		if err != nil {
+			return nil, fmt.Errorf("构建重试请求失败: %w", err)
 		}
 
-		// 检查是否应该重试
-		if !isRetryable(lastErr) {
-			break
+		// 执行请求
+		resp, lastErr = h.client.Do(attemptReq)
+		if lastErr == nil {
+			// 2xx-4xx 直接返回，5xx 进入重试流程
+			if resp.StatusCode < http.StatusInternalServerError || resp.StatusCode == http.StatusTooManyRequests {
+				return resp, nil
+			}
+			if attempt == totalAttempts-1 {
+				return resp, nil
+			}
+			if resp.Body != nil {
+				resp.Body.Close()
+			}
+		} else if !h.shouldRetryError(lastErr) || attempt == totalAttempts-1 {
+			return nil, lastErr
 		}
 
 		// 计算退避时间（使用指数退避）
 		backoffTime := time.Duration(1<<uint(attempt)) * h.retryConfig.RetryDelay
-		h.logger.Warn("请求失败，将在 %v 后重试 (尝试 %d/%d): %v", backoffTime, attempt+1, h.retryConfig.MaxRetries, lastErr)
+		h.logger.Warn("请求失败，将在 %v 后重试 (尝试 %d/%d): %v", backoffTime, attempt+1, totalAttempts, buildRetryReason(lastErr, resp))
 
 		// 等待退避时间或上下文取消
 		select {
 		case <-time.After(backoffTime):
-		case <-req.Context().Done():
-			return nil, req.Context().Err()
+		case <-attemptReq.Context().Done():
+			return nil, attemptReq.Context().Err()
 		}
 	}
 
-	if lastErr != nil {
-		return nil, lastErr
-	}
-
-	return resp, nil
+	return resp, lastErr
 }
 
 // applyInterceptors 应用请求拦截器链
@@ -277,4 +286,35 @@ func (r *realHttpClient) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+func (h *HTTPClient) shouldRetryError(err error) bool {
+	if h.retryConfig != nil && h.retryConfig.Retryable != nil {
+		return h.retryConfig.Retryable(err)
+	}
+	return isRetryable(err)
+}
+
+func cloneRequestForAttempt(req *http.Request) (*http.Request, error) {
+	cloned := req.Clone(req.Context())
+	if req.Body == nil || req.GetBody == nil {
+		return cloned, nil
+	}
+
+	body, err := req.GetBody()
+	if err != nil {
+		return nil, err
+	}
+	cloned.Body = body
+	return cloned, nil
+}
+
+func buildRetryReason(err error, resp *http.Response) error {
+	if err != nil {
+		return err
+	}
+	if resp == nil {
+		return fmt.Errorf("unknown retryable failure")
+	}
+	return fmt.Errorf("server returned status %d", resp.StatusCode)
 }

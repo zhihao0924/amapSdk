@@ -132,14 +132,6 @@ func NewClient(config *Config) (*Client, error) {
 	}, nil
 }
 
-// NewClientWithContext 创建带上下文的客户端
-func NewClientWithContext(ctx context.Context, config *Config) (*Client, error) {
-	if ctx == nil {
-		return nil, common.NewError(common.ErrInvalidParams, "context cannot be nil")
-	}
-	return NewClient(config)
-}
-
 // GetConfig 获取配置
 func (c *Client) GetConfig() *Config {
 	return c.coreClient.GetConfig()

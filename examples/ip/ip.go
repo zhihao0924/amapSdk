@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -25,7 +26,7 @@ func main() {
 	}
 
 	// 调用IP定位服务
-	resp, err := client.IP().Location(ipOpts)
+	resp, err := client.IP().Location(context.Background(), ipOpts)
 	if err != nil {
 		log.Fatalf("IP定位失败: %v", err)
 	}

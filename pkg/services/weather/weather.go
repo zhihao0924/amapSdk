@@ -39,7 +39,13 @@ func (o *Options) Validate() error {
 }
 
 // Query 查询天气
-func (s *Service) Query(opts *Options) (*models.WeatherResponse, error) {
+func (s *Service) Query(ctx context.Context, opts *Options) (*models.WeatherResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	if opts == nil {
+		return nil, common.ErrInvalidParamsError
+	}
 	if err := opts.Validate(); err != nil {
 		s.logger.Error("Weather options validation failed: %v", err)
 		return nil, fmt.Errorf("invalid options: %w", err)
@@ -56,7 +62,7 @@ func (s *Service) Query(opts *Options) (*models.WeatherResponse, error) {
 	}
 
 	var resp models.WeatherResponse
-	err := s.http.Get(context.Background(), "/weather/weatherInfo", params, &resp)
+	err := s.http.Get(ctx, "/weather/weatherInfo", params, &resp)
 	if err != nil {
 		s.logger.Error("Weather request failed: %v", err)
 		return nil, err
@@ -67,13 +73,13 @@ func (s *Service) Query(opts *Options) (*models.WeatherResponse, error) {
 }
 
 // Base 查询实况天气
-func (s *Service) Base(city string) (*models.WeatherLive, error) {
+func (s *Service) Base(ctx context.Context, city string) (*models.WeatherLive, error) {
 	opts := &Options{
 		City:       city,
 		Extensions: "base",
 	}
 
-	resp, err := s.Query(opts)
+	resp, err := s.Query(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -87,13 +93,13 @@ func (s *Service) Base(city string) (*models.WeatherLive, error) {
 }
 
 // Forecast 查询预报天气
-func (s *Service) Forecast(city string) (*models.WeatherForecast, error) {
+func (s *Service) Forecast(ctx context.Context, city string) (*models.WeatherForecast, error) {
 	opts := &Options{
 		City:       city,
 		Extensions: "all",
 	}
 
-	resp, err := s.Query(opts)
+	resp, err := s.Query(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -107,8 +113,8 @@ func (s *Service) Forecast(city string) (*models.WeatherForecast, error) {
 }
 
 // GetTomorrowWeather 获取明天天气
-func (s *Service) GetTomorrowWeather(city string) (*models.WeatherCast, error) {
-	forecast, err := s.Forecast(city)
+func (s *Service) GetTomorrowWeather(ctx context.Context, city string) (*models.WeatherCast, error) {
+	forecast, err := s.Forecast(ctx, city)
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +127,12 @@ func (s *Service) GetTomorrowWeather(city string) (*models.WeatherCast, error) {
 }
 
 // GetNextDaysWeather 获取未来N天天气预报
-func (s *Service) GetNextDaysWeather(city string, days int) ([]models.WeatherCast, error) {
-	forecast, err := s.Forecast(city)
+func (s *Service) GetNextDaysWeather(ctx context.Context, city string, days int) ([]models.WeatherCast, error) {
+	if days <= 0 {
+		return nil, errors.New("days must be greater than 0")
+	}
+
+	forecast, err := s.Forecast(ctx, city)
 	if err != nil {
 		return nil, err
 	}

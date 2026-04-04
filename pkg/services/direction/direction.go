@@ -46,7 +46,13 @@ func (o *DrivingOptions) Validate() error {
 }
 
 // Driving 驾车路径规划
-func (s *Service) Driving(opts *DrivingOptions) (*models.DrivingResponse, error) {
+func (s *Service) Driving(ctx context.Context, opts *DrivingOptions) (*models.DrivingResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	if opts == nil {
+		return nil, common.ErrInvalidParamsError
+	}
 	if err := opts.Validate(); err != nil {
 		s.logger.Error("Driving options validation failed: %v", err)
 		return nil, fmt.Errorf("invalid options: %w", err)
@@ -62,7 +68,7 @@ func (s *Service) Driving(opts *DrivingOptions) (*models.DrivingResponse, error)
 	}
 
 	var resp models.DrivingResponse
-	err := s.http.Get(context.Background(), "/direction/driving", params, &resp)
+	err := s.http.Get(ctx, "/direction/driving", params, &resp)
 	if err != nil {
 		s.logger.Error("Driving request failed: %v", err)
 		return nil, err
@@ -76,8 +82,11 @@ func (s *Service) Driving(opts *DrivingOptions) (*models.DrivingResponse, error)
 }
 
 // DrivingByLocations 使用Location对象进行驾车路径规划
-func (s *Service) DrivingByLocations(origin, destination *common.Location, strategy int) (*models.DrivingResponse, error) {
-	return s.Driving(&DrivingOptions{
+func (s *Service) DrivingByLocations(ctx context.Context, origin, destination *common.Location, strategy int) (*models.DrivingResponse, error) {
+	if origin == nil || destination == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	return s.Driving(ctx, &DrivingOptions{
 		Origin:      origin.String(),
 		Destination: destination.String(),
 		Strategy:    fmt.Sprintf("%d", strategy),
@@ -102,7 +111,13 @@ func (o *WalkingOptions) Validate() error {
 }
 
 // Walking 步行路径规划
-func (s *Service) Walking(opts *WalkingOptions) (*models.WalkingResponse, error) {
+func (s *Service) Walking(ctx context.Context, opts *WalkingOptions) (*models.WalkingResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	if opts == nil {
+		return nil, common.ErrInvalidParamsError
+	}
 	if err := opts.Validate(); err != nil {
 		s.logger.Error("Walking options validation failed: %v", err)
 		return nil, fmt.Errorf("invalid options: %w", err)
@@ -114,7 +129,7 @@ func (s *Service) Walking(opts *WalkingOptions) (*models.WalkingResponse, error)
 	}
 
 	var resp models.WalkingResponse
-	err := s.http.Get(context.Background(), "/direction/walking", params, &resp)
+	err := s.http.Get(ctx, "/direction/walking", params, &resp)
 	if err != nil {
 		s.logger.Error("Walking request failed: %v", err)
 		return nil, err
@@ -128,8 +143,11 @@ func (s *Service) Walking(opts *WalkingOptions) (*models.WalkingResponse, error)
 }
 
 // WalkingByLocations 使用Location对象进行步行路径规划
-func (s *Service) WalkingByLocations(origin, destination *common.Location) (*models.WalkingResponse, error) {
-	return s.Walking(&WalkingOptions{
+func (s *Service) WalkingByLocations(ctx context.Context, origin, destination *common.Location) (*models.WalkingResponse, error) {
+	if origin == nil || destination == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	return s.Walking(ctx, &WalkingOptions{
 		Origin:      origin.String(),
 		Destination: destination.String(),
 	})

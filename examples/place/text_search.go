@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -31,7 +32,7 @@ func main() {
 	}
 
 	// 调用POI搜索服务
-	resp, err := client.Place().TextSearch(searchOpts)
+	resp, err := client.Place().TextSearch(context.Background(), searchOpts)
 	if err != nil {
 		log.Fatalf("POI搜索失败: %v", err)
 	}
