@@ -44,7 +44,9 @@ func (c *Config) Normalize() {
 		c.Timeout = DefaultTimeout
 	}
 	if c.RetryConfig == nil {
-		c.RetryConfig = DefaultRetryConfig
+		c.RetryConfig = DefaultRetryConfig.Clone()
+	} else {
+		c.RetryConfig = c.RetryConfig.Clone()
 	}
 
 	// 验证配置
@@ -76,6 +78,7 @@ func (c *Config) GetInterceptorChain() *InterceptorChain {
 
 // Validate 验证配置
 func (c *Config) Validate() error {
+	c.Key = strings.TrimSpace(c.Key)
 	if c.Key == "" {
 		return common.WrapError(common.ErrInvalidConfigError, "API Key is required")
 	}
@@ -84,6 +87,11 @@ func (c *Config) Validate() error {
 	}
 	if c.BaseURL != "" && !isValidURL(c.BaseURL) {
 		return common.WrapError(common.ErrInvalidConfigError, "invalid BaseURL")
+	}
+	if c.RetryConfig != nil {
+		if err := c.RetryConfig.Validate(); err != nil {
+			return common.WrapError(common.ErrInvalidConfigError, err.Error())
+		}
 	}
 	return nil
 }

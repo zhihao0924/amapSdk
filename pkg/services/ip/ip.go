@@ -29,13 +29,20 @@ type LocationOptions struct {
 }
 
 // Location IP定位
-func (s *Service) Location(opts *LocationOptions) (*models.IpLocationResponse, error) {
+func (s *Service) Location(ctx context.Context, opts *LocationOptions) (*models.IpLocationResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	if opts == nil {
+		opts = &LocationOptions{}
+	}
+
 	params := map[string]string{
 		"ip": opts.IP,
 	}
 
 	var resp models.IpLocationResponse
-	err := s.http.Get(context.Background(), "/ip", params, &resp)
+	err := s.http.Get(ctx, "/ip", params, &resp)
 	if err != nil {
 		s.logger.Error("IP location request failed: %v", err)
 		return nil, err
@@ -51,20 +58,23 @@ func (s *Service) Location(opts *LocationOptions) (*models.IpLocationResponse, e
 }
 
 // Current 查询当前IP位置
-func (s *Service) Current() (*models.IpLocationResponse, error) {
-	return s.Location(&LocationOptions{})
+func (s *Service) Current(ctx context.Context) (*models.IpLocationResponse, error) {
+	return s.Location(ctx, &LocationOptions{})
 }
 
 // GetIPInfo 获取指定IP的信息
-func (s *Service) GetIPInfo(ip string) (*models.IpLocationResponse, error) {
-	return s.Location(&LocationOptions{IP: ip})
+func (s *Service) GetIPInfo(ctx context.Context, ip string) (*models.IpLocationResponse, error) {
+	return s.Location(ctx, &LocationOptions{IP: ip})
 }
 
 // BatchLocation 批量IP定位
-func (s *Service) BatchLocation(ips []string) ([]models.IpLocationResponse, error) {
+func (s *Service) BatchLocation(ctx context.Context, ips []string) ([]models.IpLocationResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
 	responses := make([]models.IpLocationResponse, len(ips))
 	for i, ip := range ips {
-		resp, err := s.Location(&LocationOptions{IP: ip})
+		resp, err := s.Location(ctx, &LocationOptions{IP: ip})
 		if err != nil {
 			s.logger.Error("Batch IP location failed for ip=%s: %v", ip, err)
 			return nil, fmt.Errorf("failed to locate ip %s: %w", ip, err)

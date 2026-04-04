@@ -82,16 +82,9 @@ func LoggingRequestInterceptor(logger common.Logger) InterceptorFunc {
 			return nil
 		}
 
-		var body string
-		if req.Body != nil {
-			buf := make([]byte, 0, 1024)
-			n, err := io.ReadFull(req.Body, buf[:cap(buf)])
-			if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
-				return err
-			}
-			buf = buf[:n]
-			body = string(buf)
-			req.Body = io.NopCloser(bytes.NewReader(buf))
+		body, err := snapshotRequestBody(req)
+		if err != nil {
+			return err
 		}
 
 		logger.Info("请求: %s %s, Header: %v, Body: %s", req.Method, req.URL, req.Header, body)
@@ -159,4 +152,31 @@ func DebugInterceptor() InterceptorFunc {
 		log.Printf("[DEBUG] Request: %s %s\n", req.Method, req.URL)
 		return nil
 	}
+}
+
+func snapshotRequestBody(req *http.Request) (string, error) {
+	if req.Body == nil {
+		return "", nil
+	}
+
+	if req.GetBody != nil {
+		body, err := req.GetBody()
+		if err != nil {
+			return "", err
+		}
+		defer body.Close()
+
+		data, err := io.ReadAll(body)
+		if err != nil {
+			return "", err
+		}
+		return string(data), nil
+	}
+
+	data, err := io.ReadAll(req.Body)
+	if err != nil {
+		return "", err
+	}
+	req.Body = io.NopCloser(bytes.NewReader(data))
+	return string(data), nil
 }

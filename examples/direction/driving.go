@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -28,7 +29,7 @@ func main() {
 	}
 
 	// 调用驾车路径规划服务
-	resp, err := client.Direction().Driving(drivingOpts)
+	resp, err := client.Direction().Driving(context.Background(), drivingOpts)
 	if err != nil {
 		log.Fatalf("驾车路径规划失败: %v", err)
 	}

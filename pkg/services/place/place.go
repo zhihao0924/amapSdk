@@ -45,7 +45,13 @@ func (o *TextSearchOptions) Validate() error {
 }
 
 // TextSearch 关键字搜索POI
-func (s *Service) TextSearch(opts *TextSearchOptions) (*models.TextSearchResponse, error) {
+func (s *Service) TextSearch(ctx context.Context, opts *TextSearchOptions) (*models.TextSearchResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	if opts == nil {
+		return nil, common.ErrInvalidParamsError
+	}
 	if err := opts.Validate(); err != nil {
 		s.logger.Error("TextSearch options validation failed: %v", err)
 		return nil, fmt.Errorf("invalid options: %w", err)
@@ -63,7 +69,7 @@ func (s *Service) TextSearch(opts *TextSearchOptions) (*models.TextSearchRespons
 	}
 
 	var resp models.TextSearchResponse
-	err := s.http.Get(context.Background(), "/place/text", params, &resp)
+	err := s.http.Get(ctx, "/place/text", params, &resp)
 	if err != nil {
 		s.logger.Error("TextSearch request failed: %v", err)
 		return nil, err
@@ -94,7 +100,13 @@ func (o *AroundSearchOptions) Validate() error {
 }
 
 // AroundSearch 周边POI搜索
-func (s *Service) AroundSearch(opts *AroundSearchOptions) (*models.AroundSearchResponse, error) {
+func (s *Service) AroundSearch(ctx context.Context, opts *AroundSearchOptions) (*models.AroundSearchResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	if opts == nil {
+		return nil, common.ErrInvalidParamsError
+	}
 	if err := opts.Validate(); err != nil {
 		s.logger.Error("AroundSearch options validation failed: %v", err)
 		return nil, fmt.Errorf("invalid options: %w", err)
@@ -112,7 +124,7 @@ func (s *Service) AroundSearch(opts *AroundSearchOptions) (*models.AroundSearchR
 	}
 
 	var resp models.AroundSearchResponse
-	err := s.http.Get(context.Background(), "/place/around", params, &resp)
+	err := s.http.Get(ctx, "/place/around", params, &resp)
 	if err != nil {
 		s.logger.Error("AroundSearch request failed: %v", err)
 		return nil, err
@@ -123,8 +135,11 @@ func (s *Service) AroundSearch(opts *AroundSearchOptions) (*models.AroundSearchR
 }
 
 // AroundSearchByLocation 使用Location对象进行周边搜索
-func (s *Service) AroundSearchByLocation(loc *common.Location, keywords string, radius int) (*models.AroundSearchResponse, error) {
-	return s.AroundSearch(&AroundSearchOptions{
+func (s *Service) AroundSearchByLocation(ctx context.Context, loc *common.Location, keywords string, radius int) (*models.AroundSearchResponse, error) {
+	if loc == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	return s.AroundSearch(ctx, &AroundSearchOptions{
 		Location: loc.String(),
 		Keywords: keywords,
 		Radius:   fmt.Sprintf("%d", radius),
@@ -150,7 +165,13 @@ func (o *SearchByPolygonOptions) Validate() error {
 }
 
 // SearchByPolygon 多边形搜索
-func (s *Service) SearchByPolygon(opts *SearchByPolygonOptions) (*models.SearchByPolygonResponse, error) {
+func (s *Service) SearchByPolygon(ctx context.Context, opts *SearchByPolygonOptions) (*models.SearchByPolygonResponse, error) {
+	if ctx == nil {
+		return nil, common.ErrInvalidParamsError
+	}
+	if opts == nil {
+		return nil, common.ErrInvalidParamsError
+	}
 	if err := opts.Validate(); err != nil {
 		s.logger.Error("SearchByPolygon options validation failed: %v", err)
 		return nil, fmt.Errorf("invalid options: %w", err)
@@ -166,7 +187,7 @@ func (s *Service) SearchByPolygon(opts *SearchByPolygonOptions) (*models.SearchB
 	}
 
 	var resp models.SearchByPolygonResponse
-	err := s.http.Get(context.Background(), "/place/polygon", params, &resp)
+	err := s.http.Get(ctx, "/place/polygon", params, &resp)
 	if err != nil {
 		s.logger.Error("SearchByPolygon request failed: %v", err)
 		return nil, err

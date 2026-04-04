@@ -48,6 +48,7 @@ go get github.com/zhihao0924/amapSdk
 package main
 
 import (
+    "context"
     "log"
     "github.com/zhihao0924/amapSdk"
 )
@@ -87,14 +88,16 @@ client, err := amap.NewClient(&amap.Config{
 ### 地理编码
 
 ```go
+ctx := context.Background()
+
 // 地址转坐标
-resp, err := client.Geocode().Geo(&amap.GeocodeOptions{
+resp, err := client.Geocode().Geo(ctx, &amap.GeocodeOptions{
     Address: "北京市朝阳区阜通东大街6号",
     City:    "北京",
 })
 
 // 坐标转地址
-resp, err := client.Geocode().ReGeo(&amap.ReGeoOptions{
+resp, err := client.Geocode().ReGeo(ctx, &amap.ReGeoOptions{
     Location:   "116.480881,39.989410",
     Extensions: "all",
 })
@@ -103,15 +106,17 @@ resp, err := client.Geocode().ReGeo(&amap.ReGeoOptions{
 ### 路径规划
 
 ```go
+ctx := context.Background()
+
 // 驾车路径
-resp, err := client.Direction().Driving(&amap.DrivingOptions{
+resp, err := client.Direction().Driving(ctx, &amap.DrivingOptions{
     Origin:      "116.481028,39.989643",
     Destination: "116.465302,40.004717",
     Strategy:    amap.DrivingStrategyFastest.String(),
 })
 
 // 步行路径
-resp, err := client.Direction().Walking(&amap.WalkingOptions{
+resp, err := client.Direction().Walking(ctx, &amap.WalkingOptions{
     Origin:      "116.481028,39.989643",
     Destination: "116.465302,40.004717",
 })
@@ -120,8 +125,10 @@ resp, err := client.Direction().Walking(&amap.WalkingOptions{
 ### POI 搜索
 
 ```go
+ctx := context.Background()
+
 // 关键字搜索
-resp, err := client.Place().TextSearch(&amap.TextSearchOptions{
+resp, err := client.Place().TextSearch(ctx, &amap.TextSearchOptions{
     Keywords:   "肯德基",
     City:       "北京",
     CityLimit:  "1",
@@ -129,7 +136,7 @@ resp, err := client.Place().TextSearch(&amap.TextSearchOptions{
 })
 
 // 周边搜索
-resp, err := client.Place().AroundSearch(&amap.AroundSearchOptions{
+resp, err := client.Place().AroundSearch(ctx, &amap.AroundSearchOptions{
     Location: "116.481028,39.989643",
     Keywords: "餐厅",
     Radius:   "1000",
@@ -140,20 +147,22 @@ resp, err := client.Place().AroundSearch(&amap.AroundSearchOptions{
 
 ```go
 // 实时天气
-live, err := client.Weather().Base("110101")
+live, err := client.Weather().Base(context.Background(), "110101")
 
 // 天气预报
-forecast, err := client.Weather().GetNextDaysWeather("110101", 4)
+forecast, err := client.Weather().GetNextDaysWeather(context.Background(), "110101", 4)
 ```
 
 ### IP 定位
 
 ```go
+ctx := context.Background()
+
 // 指定 IP
-resp, err := client.IP().Location(&amap.LocationOptions{IP: "8.8.8.8"})
+resp, err := client.IP().Location(ctx, &amap.LocationOptions{IP: "8.8.8.8"})
 
 // 当前 IP
-resp, err := client.IP().Current()
+resp, err := client.IP().Current(ctx)
 ```
 
 ## 🔧 配置说明
@@ -191,7 +200,7 @@ amap.SortTypeWeight  // 按权重排序
 ## 🛠️ 错误处理
 
 ```go
-resp, err := client.Geocode().Geo(&amap.GeocodeOptions{
+resp, err := client.Geocode().Geo(context.Background(), &amap.GeocodeOptions{
     Address: "不存在的地址",
 })
 if err != nil {
@@ -257,7 +266,7 @@ ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
 
 // SDK 内部支持 context，可以随时取消请求
-resp, err := client.Geocode().Geo(&amap.GeocodeOptions{
+resp, err := client.Geocode().Geo(ctx, &amap.GeocodeOptions{
     Address: "北京市朝阳区",
 })
 ```

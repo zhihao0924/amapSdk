@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -26,7 +27,7 @@ func main() {
 	}
 
 	// 调用地理编码服务
-	resp, err := client.Geocode().Geo(geoOpts)
+	resp, err := client.Geocode().Geo(context.Background(), geoOpts)
 	if err != nil {
 		log.Fatalf("地理编码失败: %v", err)
 	}

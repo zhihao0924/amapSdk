@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 	"net/http"
-	"sync"
 
 	"github.com/zhihao0924/amapSdk/pkg/common"
 )
@@ -14,15 +13,6 @@ type Client struct {
 	http        *HTTPClient
 	logger      common.Logger
 	interceptor *InterceptorChain
-
-	// 服务缓存（单例模式）
-	geocodeService   interface{}
-	directionService interface{}
-	placeService     interface{}
-	weatherService   interface{}
-	ipService        interface{}
-
-	mu sync.RWMutex
 }
 
 // NewClient 创建新的核心客户端
