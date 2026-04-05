@@ -2,8 +2,8 @@ package models
 
 // BaseResponse API基础响应
 type BaseResponse struct {
-	Status   string `json:"status"`    // 状态码，1=成功，0=失败
-	Info     string `json:"info"`      // 返回的状态说明
+	Status   string `json:"status"`   // 状态码，1=成功，0=失败
+	Info     string `json:"info"`     // 返回的状态说明
 	Infocode string `json:"infocode"` // 返回状态说明
 }
 
@@ -29,7 +29,7 @@ type PoiInfo struct {
 	ID       string          `json:"id"`       // POI ID
 	Name     string          `json:"name"`     // POI名称
 	Type     string          `json:"type"`     // POI类型
-	Tel      string          `json:"tel"`      // 电话
+	Tel      FlexString      `json:"tel"`      // 电话
 	Address  string          `json:"address"`  // 地址
 	Location string          `json:"location"` // 坐标（经度,纬度）
 	Distance Float64OrString `json:"distance"` // 距离（米）

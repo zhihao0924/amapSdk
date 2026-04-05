@@ -1,24 +1,22 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 
 	"github.com/zhihao0924/amapSdk"
+	"github.com/zhihao0924/amapSdk/examples/internal/exampleutil"
 )
 
 func main() {
 	// 创建客户端
-	client, err := amap.NewClient(&amap.Config{
-		Key:     "YOUR_API_KEY", // 替换为你的高德地图API Key
-		Debug:   true,
-		Timeout: 10,
-	})
+	client, err := exampleutil.NewClient()
 	if err != nil {
 		log.Fatalf("创建客户端失败: %v", err)
 	}
 	defer client.Close()
+	ctx, cancel := exampleutil.NewRequestContext()
+	defer cancel()
 
 	// 创建关键字搜索选项
 	searchOpts := &amap.TextSearchOptions{
@@ -32,14 +30,9 @@ func main() {
 	}
 
 	// 调用POI搜索服务
-	resp, err := client.Place().TextSearch(context.Background(), searchOpts)
+	resp, err := client.Place().TextSearch(ctx, searchOpts)
 	if err != nil {
 		log.Fatalf("POI搜索失败: %v", err)
-	}
-
-	// 检查响应状态
-	if resp.Status != "1" {
-		log.Fatalf("API错误: %s (%s)", resp.Info, resp.Infocode)
 	}
 
 	// 输出结果
@@ -66,5 +59,8 @@ func main() {
 				fmt.Printf("   坐标: %s\n", poi.Location)
 			}
 		}
+		return
 	}
+
+	fmt.Println("未搜索到 POI")
 }

@@ -5,18 +5,12 @@ import (
 	"log"
 
 	"github.com/zhihao0924/amapSdk"
+	"github.com/zhihao0924/amapSdk/examples/internal/exampleutil"
 )
 
 func main() {
-	// 创建客户端配置
-	config := &amap.Config{
-		Key:     "YOUR_API_KEY", // 替换为你的高德地图API Key
-		Debug:   true,           // 开启调试日志
-		Timeout: 10,             // 请求超时时间（秒）
-	}
-
 	// 创建客户端
-	client, err := amap.NewClient(config)
+	client, err := exampleutil.NewClient()
 	if err != nil {
 		log.Fatalf("创建客户端失败: %v", err)
 	}

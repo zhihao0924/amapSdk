@@ -1,24 +1,22 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 
 	"github.com/zhihao0924/amapSdk"
+	"github.com/zhihao0924/amapSdk/examples/internal/exampleutil"
 )
 
 func main() {
 	// 创建客户端
-	client, err := amap.NewClient(&amap.Config{
-		Key:     "YOUR_API_KEY", // 替换为你的高德地图API Key
-		Debug:   true,
-		Timeout: 10,
-	})
+	client, err := exampleutil.NewClient()
 	if err != nil {
 		log.Fatalf("创建客户端失败: %v", err)
 	}
 	defer client.Close()
+	ctx, cancel := exampleutil.NewRequestContext()
+	defer cancel()
 
 	// 创建地理编码选项
 	geoOpts := &amap.GeocodeOptions{
@@ -27,14 +25,9 @@ func main() {
 	}
 
 	// 调用地理编码服务
-	resp, err := client.Geocode().Geo(context.Background(), geoOpts)
+	resp, err := client.Geocode().Geo(ctx, geoOpts)
 	if err != nil {
 		log.Fatalf("地理编码失败: %v", err)
-	}
-
-	// 检查响应状态
-	if resp.Status != "1" {
-		log.Fatalf("API错误: %s (%s)", resp.Info, resp.Infocode)
 	}
 
 	// 输出结果
@@ -49,5 +42,8 @@ func main() {
 		fmt.Printf("级别: %s\n", geo.Level)
 		fmt.Printf("城市: %s\n", geo.City)
 		fmt.Printf("省份: %s\n", geo.Province)
+		return
 	}
+
+	fmt.Println("未返回地理编码结果")
 }
