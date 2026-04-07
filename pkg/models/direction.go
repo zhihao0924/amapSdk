@@ -32,7 +32,7 @@ type DrivingStep struct {
 	Distance        string     `json:"distance"`         // 本段距离（米）
 	Tolls           string     `json:"tolls"`            // 本段费用（元）
 	TollDistance    string     `json:"toll_distance"`    // 本段收费距离（米）
-	TollRoad        FlexString `json:"toll_road"`       // 收费路段
+	TollRoad        FlexString `json:"toll_road"`        // 收费路段
 	Duration        string     `json:"duration"`         // 本段时长（秒）
 	Polyline        string     `json:"polyline"`         // 轨迹点集合
 	Action          FlexString `json:"action"`           // 驾车动作
@@ -83,10 +83,9 @@ type WalkingPath struct {
 
 // WalkingStep 步行路径规划步骤
 type WalkingStep struct {
-	Instruction string `json:"instruction"` // 导航指示
-	Distance    int    `json:"distance"`    // 本段距离（米）
-	Duration    int    `json:"duration"`    // 本段时长（秒）
-	Action      string `json:"action"`      // 步行动作
-	Road        string `json:"road"`        // 道路名称
+	Instruction string      `json:"instruction"` // 导航指示
+	Distance    IntOrString `json:"distance"`    // 本段距离（米）
+	Duration    IntOrString `json:"duration"`    // 本段时长（秒）
+	Action      FlexString  `json:"action"`      // 步行动作
+	Road        FlexString  `json:"road"`        // 道路名称
 }
-

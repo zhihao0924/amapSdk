@@ -14,14 +14,14 @@ func (b *BaseResponse) GetInfocode() string { return b.Infocode }
 
 // AddressComponent 地址组件
 type AddressComponent struct {
-	Country  string `json:"country"`  // 国家
-	Province string `json:"province"` // 省份
-	City     string `json:"city"`     // 城市
-	District string `json:"district"` // 区县
-	Township string `json:"township"` // 乡镇
-	Adcode   string `json:"adcode"`   // 区域编码
-	Towncode string `json:"towncode"` // 乡镇编码
-	Citycode string `json:"citycode"` // 城市编码
+	Country  string     `json:"country"`  // 国家
+	Province string     `json:"province"` // 省份
+	City     FlexString `json:"city"`     // 城市
+	District string     `json:"district"` // 区县
+	Township string     `json:"township"` // 乡镇
+	Adcode   string     `json:"adcode"`   // 区域编码
+	Towncode string     `json:"towncode"` // 乡镇编码
+	Citycode string     `json:"citycode"` // 城市编码
 }
 
 // PoiInfo POI信息
